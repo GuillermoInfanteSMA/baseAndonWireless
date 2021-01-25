@@ -34,6 +34,12 @@ public class BaseAndonWireless {
     private static final int FOOTER_LENGTH = 2;
     private static final int MESSAGE_LENGTH = 13;
     
+    public BaseAndonWireless(){
+        this.Connect();
+        out = serial.getOutputStream();
+        this.loop();
+    }
+    
     public void Connect(){
         try{
             System.out.println("Conectando...");
@@ -51,14 +57,51 @@ public class BaseAndonWireless {
         }catch(IOException ioe){ System.err.println("Error al conectase a /dev/ttyAMA0");
         }catch(InterruptedException ie){ System.err.println("Error en Hilo (Sleep) dentro de conexión"); }
     } 
+    
+    public void loop(){
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                try {
+                    int auxContador = 0;
+                    int i = 0;
+                    byte[] message;
+                    while(auxContador != 10){
+                        //out.write(MESSAGE_BODY[i]); //first attempt
+                        message = Arrays.copyOf(MESSAGE_HEADER, HEADER_LENGTH + BODY_LENGTH);
+                        System.arraycopy(MESSAGE_BODY[i], 0, message, HEADER_LENGTH, BODY_LENGTH);
+                        message = Arrays.copyOf(message, MESSAGE_LENGTH);
+                        System.arraycopy(MESSAGE_FOOTER, 0, message, HEADER_LENGTH + BODY_LENGTH, FOOTER_LENGTH);
+                        out.write(message);
+                        System.out.println("Cambiando de Color...");
+                        Thread.sleep(5000);
+                        i++;
+                        auxContador++;
+                        if(i == MESSAGE_BODY.length){
+                            i=0;
+                        }
+                    }
+                    message = Arrays.copyOf(MESSAGE_HEADER, HEADER_LENGTH + BODY_LENGTH);
+                    System.arraycopy(ALL_TURNOFF, 0, message, HEADER_LENGTH, BODY_LENGTH);
+                    message = Arrays.copyOf(message, MESSAGE_LENGTH);
+                    System.arraycopy(MESSAGE_FOOTER, 0, message, HEADER_LENGTH + BODY_LENGTH, FOOTER_LENGTH);
+                    System.out.println("Apangando Torreta...");
+                    out.write(message);
+                    Thread.sleep(5000);
+                    System.out.println("HILO: Terminó mi proceso.");
+                }catch( IOException ioe ) {System.err.println("Error al enviar mensaje: " + ioe);
+                }catch( InterruptedException ie ){System.err.println("Error dentro de Thread: " + ie);}
+            }
+        };
+        thread.start();
+    }
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         // TODO code application logic here
-        BaseAndonWireless baw = new BaseAndonWireless();
-        baw.Connect();
+        new BaseAndonWireless();
     }
     
 }
