@@ -19,17 +19,20 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 /**
- *
+ * Base para la conexión Wireless con el Andon SMT
  * @author Guillermo Infante
  */
 public class BaseAndonWireless {
     
+    //Serial es el objeto que nos permitirá establecer la conexión con el epuerto
     private Serial serial;
+    //OutputStream es el objeto con el que estaremos enviandole datos al puerto serie
     private OutputStream out;
+    //Contatnstes bytes que formaran el mensaje completo de bytes que se enviarán mas tarde
     private static final byte[] MESSAGE_HEADER = {0x41, 0x42, 0x44, 0x00, 0x00, 0x07};
     private static final byte[] MESSAGE_FOOTER = {0x00, 0x00};
     public static final byte [][] MESSAGE_BODY = {{0x07, 0x07, 0x07, 0x07, 0x07}, {0x01, 0x01, 0x01, 0x01, 0x01}, {0x04, 0x04, 0x04, 0x04, 0x04}, {0x07, 0x01, 0x04, 0x01, 0x07}, {0x04, 0x01, 0x07, 0x01, 0x04}};
-    private static final byte[] ALL_TURNOFF = {0x00, 0x00, 0x00, 0x00, 0x00};
+    //Constantes que almacenan el tamaño del array de bytes del mensaje que enviaremos
     private static final int HEADER_LENGTH = 6;
     private static final int BODY_LENGTH = 5;
     private static final int FOOTER_LENGTH = 2;
@@ -46,12 +49,20 @@ public class BaseAndonWireless {
     private static final byte PINK = 0x08;
     private static final byte WHITE = 0x09;
     
+    /**
+     * Al instanciar un objeto del tipo BaseAndoWireless, se inicia la conexión y se instancia nuestro outputstream
+     * tambien iniciamos nuestro loop, recordando que estamos trabajando con un hilo.
+     */
     public BaseAndonWireless(){
         this.Connect();
         out = serial.getOutputStream();
         this.loop();
     }
     
+    /**
+     * Método que utilizamos para establecer la conexión con el puerto serie correpondiente
+     * (Puerto en el que se encuentra el módulo LORA).
+     */
     public void Connect(){
         try{
             System.out.println("Conectando...");
@@ -70,6 +81,10 @@ public class BaseAndonWireless {
         }catch(InterruptedException ie){ System.err.println("Error en Hilo (Sleep) dentro de conexión"); }
     } 
     
+    /**
+     * Método utilizado para que el usuario pueda generara su propia serie de colores y que se pueda enviar a la torreta.
+     * @return el array de bytes del cuerpo del mensaje que se enviará al LORA
+     */
     public byte [] seleccionColorSerie(){
         byte [] byteReturn = new byte [5];
         System.out.println("Ingrese número de 5 dígitos, cada digito corresponderá a un led de la torreta");
@@ -117,6 +132,9 @@ public class BaseAndonWireless {
         return byteReturn;
     } 
     
+    /**
+     * Bucle de nuestro hilo, el cual se encarga de hacer la consulta con el uauario para conocer la nueva serie. 
+     */
     public void loop(){
         Thread thread = new Thread(){
             @Override
